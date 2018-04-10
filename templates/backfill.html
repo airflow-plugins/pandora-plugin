@@ -1,0 +1,138 @@
+{% extends "airflow/master.html" %}
+{% import 'admin/lib.html' as lib with context %}
+
+{% block title %}Backfill Form{% endblock %}
+
+{% block head_css %}
+    {{ lib.form_css() }}
+    {{ super() }}
+    <link href="{{ admin_static.url(filename='vendor/bootstrap-daterangepicker/daterangepicker-bs2.css') }}" rel="stylesheet">
+    <style type="text/css">
+        .btn-default:hover {
+            background-color: #007a87;
+            color: white;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    {{ super() }}
+    <h2>Backfill Form</h2>
+    <p>Provides an interface to run clear and backfill commands for a dag for either testing or production purposes.</p>
+    <h4>Explanation About Date Ranges</h4>
+    <p>
+        The start date and end date you select create an interval in which airflow searches for dag execution dates that
+        fall within this window. The dag execution date is based on the schedule_interval you set in your dag object. By
+        default we have set this interval to be from yesterday 00:00:00 to yesterday 23:59:00, capturing a full 24 hours.
+        For the majority of cases, the dag is scheduled to run nightly, and this interval will suffice, but in the case
+        that your dag is more or less frequent than nightly, you will have to shrink the time interval (if more frequent)
+        or you will have to extend the day interval (if less frequent) for your execution date to fall within the interval.
+    </p>
+    <hr>
+    <form id="backfill_form" action="." method="POST">
+        <input name="_csrf_token" type="hidden" value="{{ csrf_token() }}">
+        <div class="form-group">
+            <label for="command">Command</label>
+            <select class="form-control" name="command" id="command">
+                {% for command in commands -%}
+                    <option value="{{ command }}">{{ command }}</option>
+                {% endfor -%}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="dag">Dag List</label>
+            <select class="form-control" name="dag" id="dag">
+                {% for dag in dags -%}
+                    <option value="{{ dag }}">{{ dag }}</option>
+                {% endfor -%}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="start_date">Start Date</label>
+            <div style="display: table">
+            {{ form.start_date(class_="form-control") | safe }}
+            <span class="input-group-addon">
+                <span class="glyphicon glyphicon-calendar"></span>
+            </span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="end_date">End Date</label>
+            <div style="display: table">
+            {{ form.end_date(class_="form-control") | safe }}
+            <span class="input-group-addon">
+                <span class="glyphicon glyphicon-calendar"></span>
+            </span>
+            </div>
+        </div>
+        <div id="depends_on_past" class="checkbox">
+            <label>
+                <input type="checkbox" name="depends_on_past"> Ignore First Depends on Past
+                <span id="statuses_info" class="glyphicon glyphicon-info-sign" aria-hidden="true"
+                      title="Ignores depends_on_past dependencies for the first set of tasks only (subsequent executions in the backfill DO respect depends_on_past)."></span>
+            </label>
+        </div>
+
+        <div class="modal fade" id="confirmation_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="myModalLabel">Confirmation</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p id="modal_message"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-default" id="modal-btn-yes" data-dismiss="modal">Yes</button>
+                        <button type="button" class="btn btn-primary" id="modal-btn-no" data-dismiss="modal">No</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-default btn-submit" id="Submit"
+                    data-toggle="modal" data-target="#confirmation_modal">Submit</button>
+    </form>
+{% endblock %}
+
+{% block tail %}
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script>
+    <!--Confirmation Modal Section-->
+    var modal_message = $('#modal_message'),
+        modal_yes = $('#modal-btn-yes'),
+        backfill_form = $('#backfill_form'),
+        command = $('#command'),
+        dag_list = $('#dag'),
+        start_date = $('#start_date'),
+        end_date = $('#end_date');
+
+    $('.btn-submit').on('click', function() {
+        modal_message.html('Are you sure you want to <i>' +
+            command.val() + '</i> <b>' +
+            dag_list.val() + '</b> from<br> <b>' + start_date.val() + '</b> to <b>' +
+            end_date.val() + '</b>?');
+    });
+
+    modal_yes.on('click', function() {
+        $('.btn-submit').prop('disabled', true);
+        backfill_form.submit();
+    });
+  </script>
+  {{ lib.form_js() }}
+  {{ super() }}
+  <script src="{{ admin_static.url(filename='vendor/bootstrap-daterangepicker/daterangepicker.js') }}"></script>
+  <script src="{{ admin_static.url(filename='admin/js/form-1.0.0.js') }}"></script>
+  <script>
+    $( document ).ready(function() {
+      $('#command_select').on('change', function(){
+        if($(this).find("option:selected").text() == "backfill"){
+          $('#depends_on_past').removeClass('hide');
+        } else {
+          $('#depends_on_past').addClass('hide');
+        }
+      });
+    });
+  </script>
+{% endblock %}

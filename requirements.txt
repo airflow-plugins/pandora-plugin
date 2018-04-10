@@ -1,0 +1,5 @@
+apache-airflow>=1.8.1
+prometheus-client>=0.0.19,<1.0.0
+slackclient>=1.0.5,<2.0.0
+snakebite>=2.11.0,<3.0.0
+syslog-rfc5424-formatter>=1.0.0,<2.0.0

@@ -1,0 +1,113 @@
+{% set host_server = conf.get('webserver', 'base_url') %}
+<html>
+    <style>
+        table { border: none; border-collapse: collapse; }
+        table th {
+            width: 20%;
+            border-left: 2px solid #000;
+            border-bottom: 2px solid #000;
+            padding:4px;
+        }
+        table td { width: 50%; border-left: 1px solid #000; border-bottom: 1px solid #000; padding:4px;}
+        table td:first-child { border-left: none; }
+        div#content {
+            width: 90%;
+        }
+        div#results {
+            width: 50%;
+            margin-top: 20px;
+        }
+
+        td.success {
+            background-color: green;
+        }
+        td.up_for_retry {
+            background-color: gold;
+        }
+        td.failed {
+            background-color: red;
+        }
+        td.skipped {
+            background-color: pink;
+        }
+
+        {% for op in operators -%}
+            td.{{ op.__name__ }} {
+                background-color:{{ op.ui_color }};
+                color:{{ op.ui_fgcolor }};
+            }
+        {% endfor -%}
+        table#jobs {
+            width: 100%;
+            margin-top: 20px;
+            white-space: nowrap;
+        }
+
+        td.success a, td.up_for_retry a, td.failed a, td.skipped a {
+            color: white;
+        }
+        a {
+            color: black;
+            #text-decoration: none;
+        }
+    </style>
+    <body>
+        <div id='content'>
+            <div id='status'>
+                <table style='border:2px solid black'>
+                    <tr>
+                        <td>Status</td>
+                        <td class='{{dagrun_class}}'>
+                        <a href='{{ host_server }}/admin/airflow/tree?base_date={{ts}}&num_runs=50&root=&dag_id={{dag.dag_id}}'><b>{{dagrun_status}}</b></a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Activity</td>
+                        <td><a href='{{ host_server }}/admin/airflow/dag_details?dag_id={{dag.dag_id}}'>{{dag.dag_id}}</a></td>
+                    </tr>
+                    <tr>
+                        <td>Start Time</td>
+                        <td>{{start_time}}</td>
+                    </tr>
+                    <tr>
+                        <td>End Time</td>
+                        <td>{{end_time}}</td>
+                    </tr>
+                    <tr>
+                        <td>Elapsed Time</td>
+                        <td>{{elapsed_time}}</td>
+                    </tr>
+                    <tr>
+                        <td colspan='2'><a href='{{ host_server }}/admin/taskinstance/?flt0_dag_id_equals={{ dag.dag_id }}&flt4_execution_date_equals={{ macros.ds_format(ts, '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d+%H%%3A%M%%3A%S') }}'>Task Instances</a></td>
+                    </tr>
+                    <tr>
+                        <td colspan='2'><a href='{{ host_server }}/admin/airflow/gantt?dag_id={{ dag.dag_id }}&execution_date={{ ts }}'>Gantt Chart</a></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div id='results'>
+            <table id='jobs' style='border:2px solid black'>
+                <tr>
+                    <th>Status</th>
+                    <th>Job name</th>
+                    <th>Start time</th>
+                    <th>End time</th>
+                    <th>Elapsed</th>
+                </tr>
+                {% for ti in task_instances: -%}
+
+                    <tr>
+                        <td class='{{ti.state}}' >
+                            <a href='{{ host_server }}/admin/airflow/log?execution_date={{ts}}&task_id={{ti.task_id}}&dag_id={{dag.dag_id}}'>{{ti.state}}</a></td>
+                        <td class="{{ti.operator}}">
+                            <a href='{{ host_server }}/admin/airflow/graph?root={{ti.task_id}}&dag_id={{dag.dag_id}}&execution_date={{ts}}'>{{ti.task_id}}</a></td>
+                        <td><a href='{{ host_server }}/admin/airflow/tree?base_date={{ts}}&num_runs=50&root={{ti.task_id}}&dag_id={{dag.dag_id}}'>{{ti.start_date}}</a></td>
+                        <td><a href='{{ host_server }}/admin/airflow/gantt?root={{ti.task_id}}&dag_id={{dag.dag_id}}&execution_date={{ts}}'>{{ti.end_date}}</a></td>
+                        <td><a href='{{ host_server }}/admin/airflow/duration?root={{ti.task_id}}&base_date={{ts}}&days=9999&dag_id={{dag.dag_id}}'>{{ti.duration}}</a></td>
+                    </tr>
+                {% endfor -%}
+            </table>
+        </div>
+    </body>
+</html>
