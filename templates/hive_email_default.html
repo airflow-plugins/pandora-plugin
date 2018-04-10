@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+#hive_email, body {
+    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+#hive_email td, #hive_email th {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+#hive_email tr:nth-child(even){background-color: #f2f2f2;}
+
+#hive_email tr:hover {background-color: #ddd;}
+
+#hive_email th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #02A5F2;
+    color: white;
+}
+
+#hql {
+  background-color: #eff0f1;
+  font-size: 14px;
+  width: auto;
+  padding: 4px;
+  margin-bottom: 2em;
+}
+</style>
+</head>
+<body>
+<p>The following results are for the query:</p>
+<div id="hql">
+<pre><code>{{ hql }}</code></pre>
+</div>
+<table id="hive_email">
+  <tr>
+    {% for col in col_names -%}
+      <th>{{ col }}</th>
+    {% endfor -%}
+  </tr>
+  {% for row in rows -%}
+    <tr>
+      {% for val in row.split('\t') %}
+      <td>{{ val }}</td>
+      {% endfor -%}
+    </tr>
+  {% endfor -%}
+</table>
+
+</body>
+</html>
